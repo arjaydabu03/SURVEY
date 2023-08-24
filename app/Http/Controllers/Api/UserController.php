@@ -15,12 +15,39 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Http;
 
 use App\Http\Requests\User\StoreRequest;
+use App\Http\Requests\Questionaire\DisplayRequest;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(DisplayRequest $request)
     {
-        $users = User::with("role")->get();
+        $status = $request->status;
+        $search = $request->search;
+        $paginate = isset($request->paginate) ? $request->paginate : 1;
+
+        $users = User::when($status === "inactive", function ($query) {
+            $query->onlyTrashed();
+        })->when($search, function ($query) use ($search) {
+            $query
+                ->where("account_code", "like", "%" . $search . "%")
+                ->orWhere("first_name", "like", "%" . $search . "%")
+                ->orWhere("middle_name", "like", "%" . $search . "%")
+                ->orWhere("last_name", "like", "%" . $search . "%")
+                ->orWhere("sex", "like", "%" . $search . "%")
+                ->orWhere("location_name", "like", "%" . $search . "%")
+                ->orWhere("department_name", "like", "%" . $search . "%")
+                ->orWhere("company_name", "like", "%" . $search . "%");
+        });
+
+        $users = $paginate
+            ? $users->orderByDesc("updated_at")->paginate($request->rows)
+            : $users->orderByDesc("updated_at")->get();
+
+        $is_empty = $users->isEmpty();
+
+        if ($is_empty) {
+            return GlobalFunction::not_found(Message::NOT_FOUND);
+        }
         return GlobalFunction::response_function(Message::USER_DISPLAY, $users);
     }
 
@@ -33,11 +60,8 @@ class UserController extends Controller
             "last_name" => $request["personal_info"]["last"],
             "sex" => $request["personal_info"]["sex"],
             "role_id" => $request["role_id"],
-
             "location_name" => $request["location"]["name"],
-
             "department_name" => $request["department"]["name"],
-
             "company_name" => $request["company"]["name"],
         ]);
         return GlobalFunction::save(Message::USER_SAVE, $users);
