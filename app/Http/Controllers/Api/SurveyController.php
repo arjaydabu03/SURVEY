@@ -61,15 +61,10 @@ class SurveyController extends Controller
     public function update(Request $request, $id)
     {
         $survey = Survey::find($id);
-        
-        foreach ($request->survey as $survey) {
-            $survey->update([
-                "user_id" => $user_id,
-                "question_id" => $survey["id"],
-                "answer" => $survey["answer"],
-            ]);
-        }
-        return GlobalFunction::save(Message::SURVEY_UPDATE, $request->$survey);
+        $survey->update([
+            "answer" => $request->answer,
+        ]);
+        return GlobalFunction::save(Message::SURVEY_UPDATE, $survey);
     }
     public function destroy($id)
     {

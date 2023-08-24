@@ -20,9 +20,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with("role")
-            ->get()
-            ->first();
+        $users = User::with("role")->get();
         return GlobalFunction::response_function(Message::USER_DISPLAY, $users);
     }
 
