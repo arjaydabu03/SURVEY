@@ -25,29 +25,29 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         return [
-            "personal_info.code" => [
+            "personal_info.id_no" => [
                 "required",
                 $this->route()->id
-                    ? "unique:users,account_code," . $this->route()->id
-                    : "unique:users,account_code",
+                    ? "unique:users,id_no," . $this->route()->id
+                    : "unique:users,id_no",
             ],
             "personal_info.first" => "required",
             "personal_info.last" => "required",
-            "location.name" => "required",
-            "department.name" => "required",
-            "company.name" => "required",
+            "location" => "required",
+            "department" => "required",
+            "company" => "required",
             "role_id" => "required|exists:role,id,deleted_at,NULL",
         ];
     }
     public function attributes()
     {
         return [
-            "personal_info.code" => "account code",
+            "personal_info.id_no" => "Id no",
             "personal_info.first" => "first name",
             "personal_info.last" => "last name",
-            "location.name" => "location",
-            "department.name" => "department",
-            "company.name" => "company",
+            "location" => "location",
+            "department" => "department",
+            "company" => "company",
         ];
     }
 

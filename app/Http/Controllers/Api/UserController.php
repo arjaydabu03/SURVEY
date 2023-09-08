@@ -25,19 +25,22 @@ class UserController extends Controller
         $search = $request->search;
         $paginate = isset($request->paginate) ? $request->paginate : 1;
 
-        $users = User::when($status === "inactive", function ($query) {
-            $query->onlyTrashed();
-        })->when($search, function ($query) use ($search) {
-            $query
-                ->where("account_code", "like", "%" . $search . "%")
-                ->orWhere("first_name", "like", "%" . $search . "%")
-                ->orWhere("middle_name", "like", "%" . $search . "%")
-                ->orWhere("last_name", "like", "%" . $search . "%")
-                ->orWhere("sex", "like", "%" . $search . "%")
-                ->orWhere("location_name", "like", "%" . $search . "%")
-                ->orWhere("department_name", "like", "%" . $search . "%")
-                ->orWhere("company_name", "like", "%" . $search . "%");
-        });
+        $users = User::with("role")
+            ->when($status === "inactive", function ($query) {
+                $query->onlyTrashed();
+            })
+            ->when($search, function ($query) use ($search) {
+                $query
+                    ->where("id_no", "like", "%" . $search . "%")
+                    ->orWhere("id_prefix", "like", "%" . $search . "%")
+                    ->orWhere("first_name", "like", "%" . $search . "%")
+                    ->orWhere("middle_name", "like", "%" . $search . "%")
+                    ->orWhere("last_name", "like", "%" . $search . "%")
+                    ->orWhere("sex", "like", "%" . $search . "%")
+                    ->orWhere("location_name", "like", "%" . $search . "%")
+                    ->orWhere("department_name", "like", "%" . $search . "%")
+                    ->orWhere("company_name", "like", "%" . $search . "%");
+            });
 
         $users = $paginate
             ? $users->orderByDesc("updated_at")->paginate($request->rows)
@@ -54,35 +57,43 @@ class UserController extends Controller
     public function store(StoreRequest $request)
     {
         $users = User::create([
-            "account_code" => $request["personal_info"]["code"],
+            "id_prefix" => $request["personal_info"]["id_prefix"],
+            "id_no" => $request["personal_info"]["id_no"],
             "first_name" => $request["personal_info"]["first"],
             "middle_name" => $request["personal_info"]["middle"],
             "last_name" => $request["personal_info"]["last"],
             "sex" => $request["personal_info"]["sex"],
             "role_id" => $request["role_id"],
-            "location_name" => $request["location"]["name"],
-            "department_name" => $request["department"]["name"],
-            "company_name" => $request["company"]["name"],
+            "location_name" => $request["location"],
+            "department_name" => $request["department"],
+            "company_name" => $request["company"],
         ]);
         return GlobalFunction::save(Message::USER_SAVE, $users);
     }
     public function login(Request $request)
     {
         $user = User::with("role")
-            ->where("account_code", $request->account_code)
+            ->where("id_prefix", $request->id_prefix)
+            ->where("id_no", $request->id_no)
             ->first();
 
-        if (!$user || ($request->account_code = !$user->account_code)) {
+        if (
+            !$user ||
+            ($request->id_prefix &&
+                ($request->id_prefix = !$user->id_prefix && !$user->id_no))
+        ) {
             throw ValidationException::withMessages([
-                "account_code" => ["The provided credentials are incorrect."],
+                "id_prefix" => ["The provided credentials are incorrect."],
+                "id_no" => ["The provided credentials are incorrect."],
             ]);
 
-            if ($user || $request->account_code == $user->account_code) {
+            if ($user || $request->id_no == $user->id_no) {
                 return GlobalFunction::response_function(
                     Message::INVALID_ACTION
                 );
             }
         }
+        // return "success";
         $token = $user->createToken("PersonalAccessToken")->plainTextToken;
         $user["token"] = $token;
 
@@ -122,11 +133,9 @@ class UserController extends Controller
             "last_name" => $request["personal_info"]["last"],
             "sex" => $request["personal_info"]["sex"],
 
-            "location_name" => $request["location"]["name"],
-
-            "department_name" => $request["department"]["name"],
-
-            "company_name" => $request["company"]["name"],
+            "location_name" => $request["location_name"],
+            "department_name" => $request["department_name"],
+            "company_name" => $request["company_name"],
         ]);
         return GlobalFunction::save(Message::USER_UPDATE, $users);
     }
@@ -164,5 +173,25 @@ class UserController extends Controller
         }
 
         return GlobalFunction::response_function($message, $user);
+    }
+
+    public function import_user(Request $request)
+    {
+        $import_user = $request->all();
+        foreach ($import_user as $import) {
+            $users = User::create([
+                "account_code" => $import["personal_info"]["code"],
+                "first_name" => $import["personal_info"]["first"],
+                "middle_name" => $import["personal_info"]["middle"],
+                "last_name" => $import["personal_info"]["last"],
+                "sex" => $import["personal_info"]["sex"],
+                "role_id" => 2,
+                "location_name" => $import["location"]["name"],
+                "department_name" => $import["department"]["name"],
+                "company_name" => $import["company"]["name"],
+            ]);
+        }
+
+        return GlobalFunction::save(Message::USER_SAVE, $import_user);
     }
 }

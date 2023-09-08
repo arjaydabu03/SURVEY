@@ -24,6 +24,7 @@ Route::group(["middleware" => ["auth:sanctum"]], function () {
     Route::post("logout", [UserController::class, "logout"]);
 
     Route::patch("user/{id}", [UserController::class, "destroy"]);
+    Route::post("user/import", [UserController::class, "import_user"]);
     Route::apiResource("user", UserController::class);
 
     Route::patch("role/{id}", [RoleController::class, "destroy"]);
