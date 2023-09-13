@@ -17,34 +17,22 @@ use Illuminate\Support\Facades\Http;
 use App\Http\Requests\User\StoreRequest;
 use App\Http\Requests\Questionaire\DisplayRequest;
 
+use Essa\APIToolKit\Api\ApiResponse;
+
 class UserController extends Controller
 {
+    use ApiResponse;
+
     public function index(DisplayRequest $request)
     {
         $status = $request->status;
-        $search = $request->search;
-        $paginate = isset($request->paginate) ? $request->paginate : 1;
-
+        $date = $request->date;
         $users = User::with("role")
             ->when($status === "inactive", function ($query) {
                 $query->onlyTrashed();
             })
-            ->when($search, function ($query) use ($search) {
-                $query
-                    ->where("id_no", "like", "%" . $search . "%")
-                    ->orWhere("id_prefix", "like", "%" . $search . "%")
-                    ->orWhere("first_name", "like", "%" . $search . "%")
-                    ->orWhere("middle_name", "like", "%" . $search . "%")
-                    ->orWhere("last_name", "like", "%" . $search . "%")
-                    ->orWhere("sex", "like", "%" . $search . "%")
-                    ->orWhere("location_name", "like", "%" . $search . "%")
-                    ->orWhere("department_name", "like", "%" . $search . "%")
-                    ->orWhere("company_name", "like", "%" . $search . "%");
-            });
-
-        $users = $paginate
-            ? $users->orderByDesc("updated_at")->paginate($request->rows)
-            : $users->orderByDesc("updated_at")->get();
+            ->UseFilters()
+            ->dynamicPaginate();
 
         $is_empty = $users->isEmpty();
 
