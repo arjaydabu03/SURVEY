@@ -15,7 +15,7 @@ use App\Http\Requests\Role\StoreRequest;
 
 class RoleController extends Controller
 {
-    public function index(DisplayRequest $request)
+    private function index(DisplayRequest $request)
     {
         $status = $request->status;
         $search = $request->search;

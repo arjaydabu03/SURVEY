@@ -31,12 +31,21 @@ class User extends Authenticatable
         "department_name",
         "company_name",
     ];
-    protected $hidden = ["remember_token", "deleted_at", "role_id"];
+    protected $hidden = ["remember_token", "role_id"];
 
     protected string $default_filters = UserFilter::class;
 
     function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function question()
+    {
+        return $this->belongsTo(Questionaire::class);
+    }
+    public function survey()
+    {
+        return $this->hasMany(Survey::class, "user_id", "id");
     }
 }

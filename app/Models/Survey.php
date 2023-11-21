@@ -14,20 +14,16 @@ class Survey extends Model
 
     protected $fillable = ["user_id", "question_id", "answer"];
 
-    protected $hidden = [
-        "created_at",
-        "deleted_at",
-        "question_id",
-        "user_id",
-        "updated_at",
-    ];
+    protected $hidden = ["deleted_at", "question_id", "user_id", "updated_at"];
+
+    
 
     public function question()
     {
-        return $this->belongsTo(Questionaire::class, "id");
+        return $this->belongsTo(Questionaire::class, "question_id");
     }
     public function user()
     {
-        return $this->belongsTo(User::class, "id");
+        return $this->belongsTo(User::class, "user_id");
     }
 }

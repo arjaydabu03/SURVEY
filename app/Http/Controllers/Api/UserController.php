@@ -39,6 +39,7 @@ class UserController extends Controller
         if ($is_empty) {
             return GlobalFunction::not_found(Message::NOT_FOUND);
         }
+
         return GlobalFunction::response_function(Message::USER_DISPLAY, $users);
     }
 
@@ -115,15 +116,16 @@ class UserController extends Controller
         }
 
         $users->update([
-            "account_code" => $request["personal_info"]["code"],
+            "id_prefix" => $request["personal_info"]["id_prefix"],
+            "id_no" => $request["personal_info"]["id_no"],
             "first_name" => $request["personal_info"]["first"],
             "middle_name" => $request["personal_info"]["middle"],
             "last_name" => $request["personal_info"]["last"],
             "sex" => $request["personal_info"]["sex"],
-
-            "location_name" => $request["location_name"],
-            "department_name" => $request["department_name"],
-            "company_name" => $request["company_name"],
+            "role_id" => $request["role_id"],
+            "location_name" => $request["location"],
+            "department_name" => $request["department"],
+            "company_name" => $request["company"],
         ]);
         return GlobalFunction::save(Message::USER_UPDATE, $users);
     }
@@ -136,15 +138,6 @@ class UserController extends Controller
 
         if ($invalid_id->isEmpty()) {
             return GlobalFunction::not_found(Message::NOT_FOUND);
-        }
-
-        $user_id = Auth()->user()->id;
-        $not_allowed = User::where("id", $id)
-            ->where("id", $user_id)
-            ->exists();
-
-        if ($not_allowed) {
-            return GlobalFunction::invalid(Message::INVALID_ACTION);
         }
         $user = User::withTrashed()->find($id);
         $is_active = User::withTrashed()

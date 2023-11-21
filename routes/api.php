@@ -23,10 +23,6 @@ use App\Http\Controllers\Api\SurveyController;
 Route::group(["middleware" => ["auth:sanctum"]], function () {
     Route::post("logout", [UserController::class, "logout"]);
 
-    Route::patch("user/{id}", [UserController::class, "destroy"]);
-    Route::post("user/import", [UserController::class, "import_user"]);
-    Route::apiResource("user", UserController::class);
-
     Route::patch("role/{id}", [RoleController::class, "destroy"]);
     Route::apiResource("role", RoleController::class);
 
@@ -39,5 +35,8 @@ Route::group(["middleware" => ["auth:sanctum"]], function () {
     Route::patch("survey/{id}", [SurveyController::class, "destroy"]);
     Route::apiResource("survey", SurveyController::class);
 });
+Route::patch("user/{id}", [UserController::class, "destroy"]);
+Route::post("user/import", [UserController::class, "import_user"]);
+Route::apiResource("user", UserController::class);
 
 Route::post("login", [UserController::class, "login"]);

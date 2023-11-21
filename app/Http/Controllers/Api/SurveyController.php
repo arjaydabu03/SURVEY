@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use App\Models\User;
+
+use App\Models\Survey;
+use App\Response\Message;
 use Illuminate\Http\Request;
 
 use App\Functions\GlobalFunction;
-use App\Response\Message;
+
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-
+use App\Http\Resources\SurveyResource;
 use App\Http\Requests\Questionaire\DisplayRequest;
-
-use App\Models\Survey;
 
 class SurveyController extends Controller
 {
@@ -20,13 +23,40 @@ class SurveyController extends Controller
         $status = $request->status;
         $search = $request->search;
         $paginate = isset($request->paginate) ? $request->paginate : 1;
+        $month = $request->month;
+        $year = $request->year;
+        $department = $request->department;
 
-        $survey = Survey::with("question", "user")
+        $survey = User::with("survey.question")
+            ->where(function ($query) {
+                return $query->whereHas("survey.question");
+            })
             ->when($status === "inactive", function ($query) {
                 $query->onlyTrashed();
             })
+
+            ->when($department, function ($query) use ($department) {
+                $query->where(
+                    "department_name",
+                    "like",
+                    "%" . $department . "%"
+                );
+            })
+            ->when($year && $month, function ($query) use ($year, $month) {
+                $query->whereHas("survey", function ($query) use (
+                    $year,
+                    $month
+                ) {
+                    $query
+                        ->whereMonth("created_at", $month)
+                        ->whereYear("created_at", $year);
+                });
+            })
             ->when($search, function ($query) use ($search) {
-                $query->where("answer", "like", "%" . $search . "%");
+                $query
+                    ->where("first_name", "like", "%" . $search . "%")
+                    ->orWhere("middle_name", "like", "%" . $search . "%")
+                    ->orWhere("last_name", "like", "%" . $search . "%");
             });
 
         $survey = $paginate
@@ -38,6 +68,7 @@ class SurveyController extends Controller
         if ($is_empty) {
             return GlobalFunction::not_found(Message::NOT_FOUND);
         }
+        new SurveyResource($survey);
 
         return GlobalFunction::response_function(
             Message::SURVEY_DISPLAY,

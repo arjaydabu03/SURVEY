@@ -36,7 +36,7 @@ class StoreRequest extends FormRequest
             "location" => "required",
             "department" => "required",
             "company" => "required",
-            "role_id" => "required|exists:role,id,deleted_at,NULL",
+            // "role_id" => "required|exists:role,id,deleted_at,NULL",
         ];
     }
     public function attributes()
